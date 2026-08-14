@@ -1,6 +1,6 @@
 // ---------- helpers ----------
 const $ = (id) => document.getElementById(id);
-const CIRC = 2 * Math.PI * 130; // omtrek van de ring (r=130)
+const CIRC = 2 * Math.PI * 130;
 
 function showScreen(id){
   document.querySelectorAll('.screen').forEach(s => s.dataset.active = 'false');
@@ -14,16 +14,33 @@ function fmt(totalSeconds){
   return [h, m, s].map(n => String(n).padStart(2, '0')).join(':');
 }
 
+function digitsOf(totalSeconds){
+  return fmt(totalSeconds).replace(/:/g, '').split('');
+}
+
+const STYLE_NAMES = { orbit: 'orbit', board: 'vertrekbord', terminal: 'terminal', wave: 'golf' };
+const STYLE_ACCENT = { orbit: '#5ef2c4', board: '#ffb020', terminal: '#39ff88', wave: '#2f9bdb' };
+
 // ---------- state ----------
 let totalSeconds = 25 * 60;
 let remaining = totalSeconds;
 let intervalId = null;
 let paused = false;
 let pipWindow = null;
+let selectedStyle = 'orbit';
+let prevDigits = null;
 
-// ---------- setup scherm ----------
+// ---------- start / setup navigatie ----------
 $('btn-new-timer').addEventListener('click', () => showScreen('screen-setup'));
 $('btn-back-start').addEventListener('click', () => showScreen('screen-start'));
+
+document.querySelectorAll('.style-card').forEach(card => {
+  card.addEventListener('click', () => {
+    document.querySelectorAll('.style-card').forEach(c => c.dataset.active = 'false');
+    card.dataset.active = 'true';
+    selectedStyle = card.dataset.style;
+  });
+});
 
 document.querySelectorAll('.chip').forEach(chip => {
   chip.addEventListener('click', () => {
@@ -52,11 +69,15 @@ $('btn-start-timer').addEventListener('click', () => {
   startTimer();
 });
 
-// ---------- timer engine ----------
+// ---------- timer-engine ----------
 function startTimer(){
   remaining = totalSeconds;
   paused = false;
+  prevDigits = null;
   $('btn-pause').textContent = 'Pauzeer';
+  document.body.dataset.style = selectedStyle;
+  $('run-style-label').textContent = STYLE_NAMES[selectedStyle];
+  if (selectedStyle === 'board') buildBoard();
   showScreen('screen-running');
   updateRunningDisplay();
   clearInterval(intervalId);
@@ -78,23 +99,101 @@ function tick(){
 
 function updateRunningDisplay(){
   const progress = totalSeconds > 0 ? remaining / totalSeconds : 0;
+  const text = fmt(remaining);
+
+  if (selectedStyle === 'orbit') updateOrbit(progress, text);
+  if (selectedStyle === 'board') updateBoard(text, progress);
+  if (selectedStyle === 'terminal') updateTerminal(progress, text);
+  if (selectedStyle === 'wave') updateWave(progress, text);
+
+  updatePip(progress, text);
+}
+
+// ---- Orbit ----
+function updateOrbit(progress, text){
   const offset = CIRC * (1 - progress);
   const angle = (1 - progress) * 360;
-
-  const text = fmt(remaining);
-  $('run-digits').textContent = text;
-  $('run-ring-progress').style.strokeDashoffset = offset;
+  $('orbit-digits').textContent = text;
+  $('orbit-progress').style.strokeDashoffset = offset;
   $('orbit-dot').style.transform =
     `translate(-50%, -50%) rotate(${angle}deg) translate(130px) rotate(-${angle}deg)`;
+}
 
-  if (pipWindow && !pipWindow.closed){
-    const pipDigits = pipWindow.document.getElementById('pip-digits');
-    const pipRing = pipWindow.document.getElementById('pip-ring-progress');
-    if (pipDigits) pipDigits.textContent = text;
-    if (pipRing) pipRing.style.strokeDashoffset = offset;
+// ---- Vertrekbord (split-flap) ----
+function buildBoard(){
+  const row = $('board-row');
+  row.innerHTML = '';
+  const groups = [
+    ['h0', 'h1'], ['m0', 'm1'], ['s0', 's1']
+  ];
+  groups.forEach((pair, gi) => {
+    const group = document.createElement('div');
+    group.className = 'flip-group';
+    pair.forEach((_, i) => {
+      const idx = gi * 2 + i;
+      const card = document.createElement('div');
+      card.className = 'flip-card';
+      card.id = 'flip-' + idx;
+      card.innerHTML = `<div class="flip-digit">0</div>`;
+      group.appendChild(card);
+    });
+    row.appendChild(group);
+    if (gi < 2){
+      const sep = document.createElement('div');
+      sep.className = 'flip-sep';
+      sep.textContent = ':';
+      row.appendChild(sep);
+    }
+  });
+
+  const status = $('board-status');
+  status.innerHTML = '';
+  for (let i = 0; i < 20; i++){
+    const lamp = document.createElement('div');
+    lamp.className = 'lamp';
+    status.appendChild(lamp);
   }
 }
 
+function updateBoard(text, progress){
+  const digits = digitsOf(remaining);
+  digits.forEach((d, i) => {
+    const card = $('flip-' + i);
+    if (!card) return;
+    const label = card.querySelector('.flip-digit');
+    if (prevDigits && prevDigits[i] !== d){
+      card.classList.remove('flipping');
+      void card.offsetWidth;
+      card.classList.add('flipping');
+      setTimeout(() => { label.textContent = d; }, 160);
+    } else if (!prevDigits){
+      label.textContent = d;
+    }
+  });
+  prevDigits = digits;
+
+  const lit = Math.round(progress * 20);
+  document.querySelectorAll('#board-status .lamp').forEach((lamp, i) => {
+    lamp.classList.toggle('lit', i < lit);
+  });
+}
+
+// ---- Terminal ----
+function updateTerminal(progress, text){
+  $('term-digits').textContent = text;
+  const width = 24;
+  const filled = Math.round(progress * width);
+  const bar = '[' + '█'.repeat(filled) + '░'.repeat(width - filled) + '] ' + Math.round(progress * 100) + '%';
+  $('term-bar').textContent = bar;
+}
+
+// ---- Golf ----
+function updateWave(progress, text){
+  $('wave-digits').textContent = text;
+  $('wave-fluid').style.height = Math.max(0, progress * 100) + '%';
+}
+
+// ---------- besturing ----------
 $('btn-pause').addEventListener('click', () => {
   paused = !paused;
   $('btn-pause').textContent = paused ? 'Hervat' : 'Pauzeer';
@@ -110,68 +209,54 @@ function finishTimer(){
   if (navigator.vibrate) navigator.vibrate([200, 80, 200]);
   showScreen('screen-done');
   if (pipWindow && !pipWindow.closed){
-    const label = pipWindow.document.getElementById('pip-label');
-    if (label) label.textContent = 'klaar!';
+    const el = pipWindow.document.getElementById('pip-digits');
+    if (el) el.textContent = 'klaar!';
   }
 }
 
 $('btn-done-start').addEventListener('click', () => showScreen('screen-start'));
 $('btn-done-again').addEventListener('click', () => startTimer());
 
-// ---------- Picture-in-Picture: houdt de timer zwevend in beeld ----------
+// ---------- Picture-in-Picture: zwevend venster, ziet er neutraal-strak uit ----------
 const pipBtn = $('btn-pip');
-
-if (!('documentPictureInPicture' in window)){
-  pipBtn.style.display = 'none';
-}
+if (!('documentPictureInPicture' in window)) pipBtn.style.display = 'none';
 
 pipBtn.addEventListener('click', async () => {
   if (!('documentPictureInPicture' in window)) return;
 
-  pipWindow = await window.documentPictureInPicture.requestWindow({
-    width: 260,
-    height: 260,
-  });
+  pipWindow = await window.documentPictureInPicture.requestWindow({ width: 260, height: 140 });
 
-  // stijl en fonts overnemen in het pip-venstertje
-  [...document.styleSheets].forEach(sheet => {
-    try {
-      const css = [...sheet.cssRules].map(r => r.cssText).join('\n');
-      const style = pipWindow.document.createElement('style');
-      style.textContent = css;
-      pipWindow.document.head.appendChild(style);
-    } catch (e) {
-      const link = pipWindow.document.createElement('link');
-      link.rel = 'stylesheet';
-      link.type = sheet.type;
-      link.media = sheet.media;
-      link.href = sheet.href;
-      pipWindow.document.head.appendChild(link);
-    }
-  });
-
-  pipWindow.document.body.className = 'pip-body';
+  const style = pipWindow.document.createElement('style');
+  style.textContent = `
+    body{ margin:0; height:100%; display:flex; flex-direction:column; align-items:center; justify-content:center;
+      background:#0b0d10; font-family:'Space Mono', monospace; }
+    .pip-digits{ font-size:30px; font-weight:700; color:#eef1f3; }
+    .pip-bar-track{ width:80%; height:6px; border-radius:999px; background:#232a32; margin-top:12px; overflow:hidden; }
+    .pip-bar-fill{ height:100%; border-radius:999px; transition:width .3s linear; }
+  `;
+  pipWindow.document.head.appendChild(style);
   pipWindow.document.body.innerHTML = `
-    <div class="ring-wrap" style="width:200px;height:200px;margin:0;">
-      <svg class="ring" viewBox="0 0 300 300">
-        <circle class="ring-track" cx="150" cy="150" r="130"></circle>
-        <circle class="ring-progress" id="pip-ring-progress" cx="150" cy="150" r="130"></circle>
-      </svg>
-      <div class="ring-center">
-        <span class="digits" id="pip-digits" style="font-size:26px;">${fmt(remaining)}</span>
-        <span class="ring-label" id="pip-label">focus</span>
-      </div>
-    </div>
+    <span class="pip-digits" id="pip-digits">${fmt(remaining)}</span>
+    <div class="pip-bar-track"><div class="pip-bar-fill" id="pip-bar-fill"></div></div>
   `;
 
-  updateRunningDisplay();
+  updatePip(totalSeconds > 0 ? remaining / totalSeconds : 0, fmt(remaining));
 
-  pipWindow.addEventListener('pagehide', () => {
-    pipWindow = null;
-  });
+  pipWindow.addEventListener('pagehide', () => { pipWindow = null; });
 });
 
-// ---------- PWA: registreer service worker zodat de app installeerbaar is ----------
+function updatePip(progress, text){
+  if (!pipWindow || pipWindow.closed) return;
+  const digits = pipWindow.document.getElementById('pip-digits');
+  const bar = pipWindow.document.getElementById('pip-bar-fill');
+  if (digits) digits.textContent = text;
+  if (bar){
+    bar.style.width = Math.max(0, progress * 100) + '%';
+    bar.style.background = STYLE_ACCENT[selectedStyle] || '#6c9fff';
+  }
+}
+
+// ---------- PWA ----------
 if ('serviceWorker' in navigator){
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('sw.js').catch(() => {});
