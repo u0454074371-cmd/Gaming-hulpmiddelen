@@ -1,7 +1,7 @@
 {
-  "name": "Orbit — focus timer",
-  "short_name": "Orbit",
-  "description": "Een timer die als zwevend venster in beeld blijft.",
+  "name": "Tijdwerk — timer",
+  "short_name": "Tijdwerk",
+  "description": "Een timer met verschillende stijlen die als zwevend venster in beeld blijft.",
   "start_url": "./index.html",
   "display": "standalone",
   "background_color": "#090c10",
