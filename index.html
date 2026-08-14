@@ -3,42 +3,51 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Orbit — focus timer</title>
-<meta name="theme-color" content="#090C10">
+<title>Tijdwerk — timer</title>
+<meta name="theme-color" content="#0b0d10">
 <link rel="manifest" href="manifest.json">
 <link rel="icon" href="icon.svg" type="image/svg+xml">
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Space+Mono:wght@400;700&family=IBM+Plex+Mono:wght@400;600&family=Oswald:wght@500;700&family=Baloo+2:wght@500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-
-<div class="stars" aria-hidden="true"></div>
 
 <main class="app">
 
   <!-- START SCHERM -->
   <section class="screen" id="screen-start" data-active="true">
-    <div class="eyebrow">orbit</div>
-    <div class="ring-wrap">
-      <svg class="ring" viewBox="0 0 300 300">
-        <circle class="ring-track" cx="150" cy="150" r="130"></circle>
-        <circle class="ring-progress" cx="150" cy="150" r="130" style="stroke-dashoffset: 0;"></circle>
-      </svg>
-      <div class="ring-center">
-        <span class="digits" id="start-digits">00:00:00</span>
-        <span class="ring-label">klaar om te starten</span>
-      </div>
-    </div>
-    <button class="btn btn-primary" id="btn-new-timer">Nieuwe timer instellen</button>
-    <p class="hint">Zet 'm uit als zwevend venster, dan blijft-ie in beeld terwijl je iets anders doet.</p>
+    <div class="eyebrow">tijdwerk</div>
+    <h1 class="title big">Zet een timer</h1>
+    <p class="hint">Kies zelf hoe hij eruitziet — vertrekbord, terminal, golf of ruimte.</p>
+    <button class="btn btn-primary" id="btn-new-timer">Timer instellen</button>
   </section>
 
   <!-- INSTEL SCHERM -->
   <section class="screen" id="screen-setup" data-active="false">
     <div class="eyebrow">instellen</div>
-    <h1 class="title">Hoe lang focussen we?</h1>
+    <h1 class="title">Kies een stijl</h1>
 
+    <div class="style-grid" id="style-grid">
+      <button class="style-card" data-style="orbit" data-active="true">
+        <span class="style-swatch swatch-orbit"></span>
+        <span class="style-name">Orbit</span>
+      </button>
+      <button class="style-card" data-style="board">
+        <span class="style-swatch swatch-board"></span>
+        <span class="style-name">Vertrekbord</span>
+      </button>
+      <button class="style-card" data-style="terminal">
+        <span class="style-swatch swatch-terminal"></span>
+        <span class="style-name">Terminal</span>
+      </button>
+      <button class="style-card" data-style="wave">
+        <span class="style-swatch swatch-wave"></span>
+        <span class="style-name">Golf</span>
+      </button>
+    </div>
+
+    <h2 class="subtitle">Hoe lang?</h2>
     <div class="picker-row">
       <div class="picker">
         <label for="input-hours">uren</label>
@@ -67,16 +76,53 @@
 
   <!-- RUNNING SCHERM -->
   <section class="screen" id="screen-running" data-active="false">
-    <div class="eyebrow" id="running-eyebrow">bezig</div>
-    <div class="ring-wrap" id="running-ring-wrap">
-      <svg class="ring" viewBox="0 0 300 300">
-        <circle class="ring-track" cx="150" cy="150" r="130"></circle>
-        <circle class="ring-progress" id="run-ring-progress" cx="150" cy="150" r="130"></circle>
-      </svg>
-      <div class="orbit-dot" id="orbit-dot"></div>
-      <div class="ring-center">
-        <span class="digits" id="run-digits">00:00:00</span>
-        <span class="ring-label" id="run-label">focus</span>
+    <div class="run-top">
+      <span class="run-style-label" id="run-style-label"></span>
+    </div>
+
+    <!-- ORBIT -->
+    <div class="visual visual-orbit" data-style-visual="orbit">
+      <div class="ring-wrap">
+        <svg class="ring" viewBox="0 0 300 300">
+          <circle class="ring-track" cx="150" cy="150" r="130"></circle>
+          <circle class="ring-progress" id="orbit-progress" cx="150" cy="150" r="130"></circle>
+        </svg>
+        <div class="orbit-dot" id="orbit-dot"></div>
+        <div class="ring-center">
+          <span class="digits" id="orbit-digits">00:00:00</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- VERTREKBORD -->
+    <div class="visual visual-board" data-style-visual="board">
+      <div class="board-row" id="board-row"></div>
+      <div class="board-status" id="board-status"></div>
+    </div>
+
+    <!-- TERMINAL -->
+    <div class="visual visual-terminal" data-style-visual="terminal">
+      <div class="term-window">
+        <div class="term-header">
+          <span class="term-dot"></span><span class="term-dot"></span><span class="term-dot"></span>
+          <span class="term-title">timer.sh</span>
+        </div>
+        <div class="term-body">
+          <div class="term-line">$ ./aftellen --start</div>
+          <div class="term-line">resterende tijd: <span class="term-digits" id="term-digits">00:00:00</span><span class="term-cursor">▌</span></div>
+          <div class="term-line term-bar" id="term-bar"></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- GOLF -->
+    <div class="visual visual-wave" data-style-visual="wave">
+      <div class="wave-wrap">
+        <div class="wave-fluid" id="wave-fluid">
+          <div class="wave-layer wave-back"></div>
+          <div class="wave-layer wave-front"></div>
+        </div>
+        <div class="wave-digits" id="wave-digits">00:00:00</div>
       </div>
     </div>
 
@@ -98,7 +144,6 @@
     <div class="eyebrow">klaar</div>
     <div class="done-glow">✓</div>
     <h1 class="title">Tijd om!</h1>
-    <p class="hint">Mooi bezig. Wat wil je nu doen?</p>
     <div class="setup-actions">
       <button class="btn btn-ghost" id="btn-done-start">Terug naar start</button>
       <button class="btn btn-primary" id="btn-done-again">Zelfde timer opnieuw</button>
