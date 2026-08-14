@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Orbit — focus timer</title>
+<meta name="theme-color" content="#090C10">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="stars" aria-hidden="true"></div>
+
+<main class="app">
+
+  <!-- START SCHERM -->
+  <section class="screen" id="screen-start" data-active="true">
+    <div class="eyebrow">orbit</div>
+    <div class="ring-wrap">
+      <svg class="ring" viewBox="0 0 300 300">
+        <circle class="ring-track" cx="150" cy="150" r="130"></circle>
+        <circle class="ring-progress" cx="150" cy="150" r="130" style="stroke-dashoffset: 0;"></circle>
+      </svg>
+      <div class="ring-center">
+        <span class="digits" id="start-digits">00:00:00</span>
+        <span class="ring-label">klaar om te starten</span>
+      </div>
+    </div>
+    <button class="btn btn-primary" id="btn-new-timer">Nieuwe timer instellen</button>
+    <p class="hint">Zet 'm uit als zwevend venster, dan blijft-ie in beeld terwijl je iets anders doet.</p>
+  </section>
+
+  <!-- INSTEL SCHERM -->
+  <section class="screen" id="screen-setup" data-active="false">
+    <div class="eyebrow">instellen</div>
+    <h1 class="title">Hoe lang focussen we?</h1>
+
+    <div class="picker-row">
+      <div class="picker">
+        <label for="input-hours">uren</label>
+        <input type="number" id="input-hours" min="0" max="23" value="0" inputmode="numeric">
+      </div>
+      <div class="picker-sep">:</div>
+      <div class="picker">
+        <label for="input-minutes">minuten</label>
+        <input type="number" id="input-minutes" min="0" max="59" value="25" inputmode="numeric">
+      </div>
+    </div>
+
+    <div class="presets">
+      <button class="chip" data-min="5">5m</button>
+      <button class="chip" data-min="15">15m</button>
+      <button class="chip" data-min="25">25m</button>
+      <button class="chip" data-min="45">45m</button>
+      <button class="chip" data-min="60">60m</button>
+    </div>
+
+    <div class="setup-actions">
+      <button class="btn btn-ghost" id="btn-back-start">Terug</button>
+      <button class="btn btn-primary" id="btn-start-timer">Start timer</button>
+    </div>
+  </section>
+
+  <!-- RUNNING SCHERM -->
+  <section class="screen" id="screen-running" data-active="false">
+    <div class="eyebrow" id="running-eyebrow">bezig</div>
+    <div class="ring-wrap" id="running-ring-wrap">
+      <svg class="ring" viewBox="0 0 300 300">
+        <circle class="ring-track" cx="150" cy="150" r="130"></circle>
+        <circle class="ring-progress" id="run-ring-progress" cx="150" cy="150" r="130"></circle>
+      </svg>
+      <div class="orbit-dot" id="orbit-dot"></div>
+      <div class="ring-center">
+        <span class="digits" id="run-digits">00:00:00</span>
+        <span class="ring-label" id="run-label">focus</span>
+      </div>
+    </div>
+
+    <div class="run-actions">
+      <button class="btn btn-ghost" id="btn-reset">Reset</button>
+      <button class="btn btn-primary" id="btn-pause">Pauzeer</button>
+      <button class="btn btn-pip" id="btn-pip" title="Blijf in beeld als zwevend venster">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <rect x="3" y="4" width="18" height="14" rx="2" stroke="currentColor" stroke-width="1.7"/>
+          <rect x="12" y="10.5" width="7" height="5" rx="1" fill="currentColor"/>
+        </svg>
+        Zwevend venster
+      </button>
+    </div>
+  </section>
+
+  <!-- KLAAR SCHERM -->
+  <section class="screen" id="screen-done" data-active="false">
+    <div class="eyebrow">klaar</div>
+    <div class="done-glow">✓</div>
+    <h1 class="title">Tijd om!</h1>
+    <p class="hint">Mooi bezig. Wat wil je nu doen?</p>
+    <div class="setup-actions">
+      <button class="btn btn-ghost" id="btn-done-start">Terug naar start</button>
+      <button class="btn btn-primary" id="btn-done-again">Zelfde timer opnieuw</button>
+    </div>
+  </section>
+
+</main>
+
+<audio id="chime" preload="auto">
+  <source src="data:audio/wav;base64,UklGRiQAAABXQVZFZm10IBAAAAABAAEAQB8AAEAfAAABAAgAZGF0YQAAAAA=" type="audio/wav">
+</audio>
+
+<script src="script.js"></script>
+</body>
+</html>
